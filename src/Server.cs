@@ -37,7 +37,7 @@ while (currHeader?.Length > 0)
     currHeader = reader.ReadLine();
 }
 
-Regex echoRegex = new Regex("^(/echo/(.*))$");
+Regex echoRegex = new Regex("^/echo/(.*)");
 Regex userAgentRegex = new Regex("^(/user-agent)$");
 
 string responseString = "HTTP/1.1 404 Not Found\r\n\r\n";
