@@ -33,7 +33,7 @@ while (currHeader?.Length > 0)
     string headerName = header[0];
     string headerValue = header[1];
 
-    headers.Add(headerName.ToLower(), headerValue);
+    headers.Add(headerName.ToLower(), headerValue.Trim());
     currHeader = reader.ReadLine();
 }
 
