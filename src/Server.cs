@@ -19,18 +19,40 @@ StreamWriter writer = new StreamWriter(stream, Encoding.UTF8);
 string? requestLine = reader.ReadLine();
 Console.WriteLine("request recieved2 {0}", requestLine);
 
-var lineSplit = requestLine.Split(" ");
+string[] lineSplit = requestLine.Split(" ");
 string method = lineSplit[0];
 string path = lineSplit[1];
 string httpVersion = lineSplit[2];
 
-string echoPattern = "^/echo/(.*)";
-Regex echoRegex = new Regex(echoPattern);
+Dictionary<string, string> headers = new Dictionary<string, string>();
+string? currHeader = reader.ReadLine();
+while (currHeader?.Length > 0)
+{
+
+    string[] header = currHeader.Split(":", 2);
+    string headerName = header[0];
+    string headerValue = header[1];
+
+    headers.Add(headerName.ToLower(), headerValue);
+    currHeader = reader.ReadLine();
+}
+
+Regex echoRegex = new Regex("^(/echo/(.*))$");
+Regex userAgentRegex = new Regex("^(/user-agent)$");
 
 string responseString = "HTTP/1.1 404 Not Found\r\n\r\n";
+var userAgentPath = userAgentRegex.Match(path);
+if (userAgentPath.Success)
+{
+    Console.WriteLine("matches user agent");
+    string? userAgentValue;
+    headers.TryGetValue("user-agent", out userAgentValue);
+    responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {userAgentValue?.Length}\r\n\r\n{userAgentValue}";
+}
 var match = echoRegex.Match(path);
 if (match.Success && match.Groups.Count > 1)
 {
+    Console.WriteLine("Matches echo");
     string toEcho = match.Groups[1].Value;
     responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {toEcho.Length}\r\n\r\n{toEcho}";
 }
