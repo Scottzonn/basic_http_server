@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 Console.WriteLine("Logs from your program will appear here!");
@@ -23,12 +24,24 @@ string method = lineSplit[0];
 string path = lineSplit[1];
 string httpVersion = lineSplit[2];
 
+string echoPattern = "^/echo/(.*)";
+Regex echoRegex = new Regex(echoPattern);
+
 string responseString = "HTTP/1.1 404 Not Found\r\n\r\n";
+var match = echoRegex.Match(path);
+if (match.Success && match.Groups.Count > 1)
+{
+    string toEcho = match.Groups[1].Value;
+    responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {toEcho.Length}\r\n\r\n{toEcho}";
+}
 if (path == "/")
 {
     responseString = "HTTP/1.1 200 OK\r\n\r\n";
 
 }
+
+
+
 
 
 byte[] data = Encoding.ASCII.GetBytes(responseString);
