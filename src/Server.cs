@@ -9,20 +9,6 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        Console.WriteLine("args:", args);
-        if (args.Length > 1)
-        {
-            Console.WriteLine("yoyo:");
-            if (args[0].ToLower() == "--directory")
-            {
-
-                Console.WriteLine("d2:");
-                Console.WriteLine(args[0].ToLower());
-
-            }
-        }
-
-
         // Uncomment this block to pass the first stage
         TcpListener server = new TcpListener(IPAddress.Any, 4221);
         Console.WriteLine("Starting server...");
@@ -63,6 +49,8 @@ class Program
                 currHeader = reader.ReadLine();
             }
 
+            string? body = reader.ReadLine();
+
             Regex echoRegex = new Regex("^/echo/(.*)");
             Regex userAgentRegex = new Regex("^(/user-agent)$");
 
@@ -93,35 +81,32 @@ class Program
                 {
 
                     string baseDir = args[1];
-                    Console.WriteLine("Directory3:");
-                    Console.WriteLine(baseDir);
-
                     var filesRegex = new Regex("^/files/(.*)");
                     var filesMatch = filesRegex.Match(path);
-                    // Console.WriteLine("Basedir {0} {1} {2}", baseDir, filesMatch.Success,  )
-                    Console.WriteLine("Match {0} {1}", filesMatch.Success, filesMatch.Groups.Count);
-
                     if (filesMatch.Success && filesMatch.Groups.Count > 1)
                     {
                         string fileName = filesMatch.Groups[1].Value;
                         string filepath = baseDir + "/" + fileName;
-                        Console.WriteLine("Showing File");
-                        Console.WriteLine(filepath);
 
-                        if (File.Exists(filepath))
+                        if (method == "POST")
                         {
-                            Console.WriteLine("File exists. Opening the file...");
+                            string fileContent = body ?? "";
+                            FileStream fileStream = File.OpenWrite(filepath);
+                            StreamWriter fwriter = new StreamWriter(fileStream);
+                            fwriter.Write(fileContent);
+                            responseString = $"HTTP/1.1 201 OK\r\n\r\n";
 
-                            // Open the file for reading
-                            using (FileStream fileStream = File.OpenRead(filepath))
+                        }
+                        else if (method == "GET")
+                        {
+
+                            if (File.Exists(filepath))
                             {
-                                using (StreamReader reader2 = new StreamReader(fileStream))
-                                {
-                                    string content = reader2.ReadToEnd();
-                                    Console.WriteLine("File content:");
-                                    Console.WriteLine(content);
-                                    responseString = $"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {content.Length}\r\n\r\n{content}";
-                                }
+                                // Open the file for reading
+                                FileStream fileStream = File.OpenRead(filepath);
+                                StreamReader reader2 = new StreamReader(fileStream);
+                                string content = reader2.ReadToEnd();
+                                responseString = $"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {content.Length}\r\n\r\n{content}";
                             }
                         }
                     }
