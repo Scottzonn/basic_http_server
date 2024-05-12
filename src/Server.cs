@@ -9,6 +9,19 @@ class Program
 {
     static async Task Main(string[] args)
     {
+        Console.WriteLine("args:", args);
+        if (args.Length > 1)
+        {
+            Console.WriteLine("yoyo:");
+            if (args[0].ToLower() == "--directory")
+            {
+
+                Console.WriteLine("d2:");
+                Console.WriteLine(args[0].ToLower());
+
+            }
+        }
+
 
         // Uncomment this block to pass the first stage
         TcpListener server = new TcpListener(IPAddress.Any, 4221);
@@ -42,7 +55,6 @@ class Program
             string? currHeader = reader.ReadLine();
             while (currHeader?.Length > 0)
             {
-
                 string[] header = currHeader.Split(":", 2);
                 string headerName = header[0];
                 string headerValue = header[1];
@@ -73,9 +85,49 @@ class Program
             if (path == "/")
             {
                 responseString = "HTTP/1.1 200 OK\r\n\r\n";
-
             }
+            if (args.Length >= 2)
+            {
+                Console.WriteLine("Directory2:");
+                if (args[0].ToLower() == "--directory")
+                {
 
+                    string baseDir = args[1];
+                    Console.WriteLine("Directory3:");
+                    Console.WriteLine(baseDir);
+
+                    var filesRegex = new Regex("^/files/(.*)");
+                    var filesMatch = filesRegex.Match(path);
+                    // Console.WriteLine("Basedir {0} {1} {2}", baseDir, filesMatch.Success,  )
+                    Console.WriteLine("Match {0} {1}", filesMatch.Success, filesMatch.Groups.Count);
+
+                    if (filesMatch.Success && filesMatch.Groups.Count > 1)
+                    {
+                        string fileName = filesMatch.Groups[1].Value;
+                        string filepath = baseDir + "/" + fileName;
+                        Console.WriteLine("Showing File");
+                        Console.WriteLine(filepath);
+
+                        if (File.Exists(filepath))
+                        {
+                            Console.WriteLine("File exists. Opening the file...");
+
+                            // Open the file for reading
+                            using (FileStream fileStream = File.OpenRead(filepath))
+                            {
+                                using (StreamReader reader2 = new StreamReader(fileStream))
+                                {
+                                    string content = reader2.ReadToEnd();
+                                    Console.WriteLine("File content:");
+                                    Console.WriteLine(content);
+                                    responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {content.Length}\r\n\r\n{content}";
+                                }
+                            }
+                        }
+                    }
+
+                }
+            }
             byte[] data = Encoding.ASCII.GetBytes(responseString);
 
             // Write the response data to the network stream.
