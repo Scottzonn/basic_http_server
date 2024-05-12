@@ -92,14 +92,15 @@ class Program
                         {
 
                             Console.WriteLine("here2");
+                            Console.WriteLine(body);
 
                             string fileContent = body ?? "";
-                            FileStream fileStream = File.OpenWrite(filepath);
-                            StreamWriter fwriter = new StreamWriter(fileStream);
+
+                            StreamWriter fwriter = new StreamWriter(filepath);
                             fwriter.Write(fileContent.Replace("\0", string.Empty));
                             responseString = $"HTTP/1.1 201 OK\r\n\r\n";
                             fwriter.Close();
-                            fileStream.Close();
+
 
                         }
                         else if (method == "GET")
