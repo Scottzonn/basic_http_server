@@ -120,7 +120,7 @@ class Program
                                     string content = reader2.ReadToEnd();
                                     Console.WriteLine("File content:");
                                     Console.WriteLine(content);
-                                    responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {content.Length}\r\n\r\n{content}";
+                                    responseString = $"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {content.Length}\r\n\r\n{content}";
                                 }
                             }
                         }
