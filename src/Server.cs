@@ -87,14 +87,19 @@ class Program
                     {
                         string fileName = filesMatch.Groups[1].Value;
                         string filepath = baseDir + "/" + fileName;
-
+                        Console.WriteLine("here");
                         if (method == "POST")
                         {
+
+                            Console.WriteLine("here2");
+
                             string fileContent = body ?? "";
                             FileStream fileStream = File.OpenWrite(filepath);
                             StreamWriter fwriter = new StreamWriter(fileStream);
-                            fwriter.Write(fileContent);
+                            fwriter.Write(fileContent.Replace("\0", string.Empty));
                             responseString = $"HTTP/1.1 201 OK\r\n\r\n";
+                            fwriter.Close();
+                            fileStream.Close();
 
                         }
                         else if (method == "GET")
