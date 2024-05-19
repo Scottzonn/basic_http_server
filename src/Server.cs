@@ -3,13 +3,15 @@ using System.Net.Sockets;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.IO;
+using System.IO.Compression;
 
 
 class Program
 {
     static string? BaseDir;
 
-    static string[] AcceptedEncodings = ["gzip"];
+    static string[] AcceptedEncodings = { "gzip" };
     static async Task Main(string[] args)
     {
         TcpListener server = new TcpListener(IPAddress.Any, 4221);
@@ -34,6 +36,7 @@ class Program
         }
     }
 
+
     public void processEncodings(HttpRequest request, HttpResponse httpResponse)
     {
         string? acceptEncoding;
@@ -47,7 +50,22 @@ class Program
                 if (Array.Exists(AcceptedEncodings, e => e.Equals(trimmedEncoding, StringComparison.OrdinalIgnoreCase)))
                 {
                     httpResponse.AddHeader("Content-Encoding", trimmedEncoding);
-                    Console.WriteLine("Content-Encoding ADDED: {0}", trimmedEncoding);
+
+                    if (trimmedEncoding == "gzip")
+                    {
+                        string body = httpResponse.Body;
+                        byte[] bodyBytes = Encoding.UTF8.GetBytes(body);
+                        using (MemoryStream ms = new MemoryStream())
+                        {
+                            using (GZipStream gzip = new GZipStream(ms, CompressionMode.Compress))
+                            {
+                                gzip.Write(bodyBytes, 0, bodyBytes.Length);
+                            }
+                            byte[] compressedBytes = ms.ToArray();
+                            httpResponse.Body = Convert.ToBase64String(compressedBytes); // Setting as Base64 for transmission
+                            httpResponse.Headers["Content-Length"] = compressedBytes.Length.ToString();
+                        }
+                    }
                     break;
                 }
             }
@@ -91,7 +109,11 @@ class Program
                 var response = new HttpResponse(200, "OK", toEcho);
                 processEncodings(request, response);
                 response.AddHeader("content-type", "text/plain");
+
+
+
                 var rs = response.ToString();
+
 
                 Console.WriteLine("Echo: {0}, {1}", toEcho, rs);
                 responseString = response.ToString();
