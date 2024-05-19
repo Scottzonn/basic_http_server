@@ -8,6 +8,8 @@ using System.Text.RegularExpressions;
 class Program
 {
     static string? BaseDir;
+
+    static string[] AcceptedEncodings = ["gzip"];
     static async Task Main(string[] args)
     {
         // Uncomment this block to pass the first stage
@@ -30,6 +32,24 @@ class Program
         {
             var client = await server.AcceptSocketAsync();
             pg.handleStuff(client);
+        }
+    }
+
+    public void processEncodings(HttpRequest request, HttpResponse httpResponse)
+    {
+        string? acceptEncoding;
+        request.Headers.TryGetValue("accept-encoding", out acceptEncoding);
+        if (acceptEncoding != null)
+        {
+            string[] encodings = acceptEncoding.Split(",");
+            foreach (string encoding in encodings)
+            {
+                if (AcceptedEncodings.Contains(encoding))
+                {
+                    httpResponse.AddHeader("content-encoding", encoding);
+                    break;
+                }
+            }
         }
     }
 
@@ -66,7 +86,12 @@ class Program
             {
                 Console.WriteLine("Matches echo");
                 string toEcho = match.Groups[1].Value;
-                responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {toEcho.Length}\r\n\r\n{toEcho}";
+
+                var response = new HttpResponse(200, "OK", toEcho);
+                response.AddHeader("content-type", "text/plain");
+                processEncodings(request, response);
+                responseString = response.ToString();
+                // responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {toEcho.Length}\r\n\r\n{toEcho}";
             }
             if (request.Path == "/")
             {
