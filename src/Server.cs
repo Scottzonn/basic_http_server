@@ -58,6 +58,7 @@ class Program
                 Console.WriteLine("matches user agent");
                 string? userAgentValue;
                 request.Headers.TryGetValue("user-agent", out userAgentValue);
+                Console.WriteLine("User agent: {0}", userAgentValue);
                 responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {userAgentValue?.Length}\r\n\r\n{userAgentValue}";
             }
             var match = echoRegex.Match(request.Path);

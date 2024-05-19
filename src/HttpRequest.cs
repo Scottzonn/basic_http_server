@@ -54,13 +54,16 @@ class HttpRequest
         Path = lineSplit[1];
         HttpVersion = lineSplit[2];
 
+        // Read headers
         Headers = new Dictionary<string, string>();
-        string? currHeader = reader.ReadLine();
-        while (currHeader?.Length > 0)
+        string? currHeader;
+        while (!string.IsNullOrEmpty(currHeader = await reader.ReadLineAsync()))
         {
-            string[] header = currHeader.Split(":", 2);
-            Headers.Add(header[0], header[1]);
-            currHeader = reader.ReadLine();
+            string[] header = currHeader.Split(":", 2, StringSplitOptions.TrimEntries);
+            if (header.Length == 2)
+            {
+                Headers.Add(header[0].Trim(), header[1].Trim());
+            }
         }
 
         // Read body
