@@ -44,9 +44,9 @@ class Program
             string[] encodings = acceptEncoding.Split(",");
             foreach (string encoding in encodings)
             {
-                if (AcceptedEncodings.Contains(encoding))
+                if (AcceptedEncodings.Contains(encoding.ToLower()))
                 {
-                    httpResponse.AddHeader("content-encoding", encoding);
+                    httpResponse.AddHeader("Content-Encoding", encoding);
                     break;
                 }
             }
@@ -88,8 +88,8 @@ class Program
                 string toEcho = match.Groups[1].Value;
 
                 var response = new HttpResponse(200, "OK", toEcho);
-                response.AddHeader("content-type", "text/plain");
                 processEncodings(request, response);
+                response.AddHeader("content-type", "text/plain");
                 var rs = response.ToString();
 
                 Console.WriteLine("Echo: {0}, {1}", toEcho, rs);
