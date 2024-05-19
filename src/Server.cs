@@ -86,7 +86,7 @@ class Program
                     {
 
                         Console.WriteLine("here2");
-                        Console.WriteLine(request.Body);
+                        Console.WriteLine("file Content: {0}", request.Body);
 
                         string fileContent = request.Body ?? "";
 

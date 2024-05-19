@@ -67,7 +67,7 @@ class HttpRequest
         }
 
         // Read body
-        if (Headers.TryGetValue("Content-Length", out string? contentLengthValue) &&
+        if (Headers.TryGetValue("content-length", out string? contentLengthValue) &&
             int.TryParse(contentLengthValue, out int contentLength))
         {
             char[] buffer = new char[contentLength];
