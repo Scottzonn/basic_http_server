@@ -68,19 +68,6 @@ class HttpResponse
         }
     }
 
-    public override string ToString()
-    {
-        StringBuilder response = new StringBuilder();
-        response.Append($"HTTP/1.1 {StatusCode} {StatusMessage}\r\n");
-        foreach (var header in Headers)
-        {
-            response.Append($"{header.Key}: {header.Value}\r\n");
-        }
-        response.Append("\r\n");
-        response.Append(_body);
-        return response.ToString();
-    }
-
     public byte[] ToByteArray(bool gzip = false)
     {
         if (gzip)
@@ -108,8 +95,22 @@ class HttpResponse
         {
             response.Append($"{header.Key}: {header.Value}\r\n");
         }
+        response.Append($"Content-Length: {GetCompressedBody().Length}\r\n");
         response.Append("Content-Encoding: gzip\r\n");
         response.Append("\r\n");
+        return response.ToString();
+    }
+
+    public override string ToString()
+    {
+        StringBuilder response = new StringBuilder();
+        response.Append($"HTTP/1.1 {StatusCode} {StatusMessage}\r\n");
+        foreach (var header in Headers)
+        {
+            response.Append($"{header.Key}: {header.Value}\r\n");
+        }
+        response.Append("\r\n");
+        response.Append(_body);
         return response.ToString();
     }
 }

@@ -49,12 +49,16 @@ class Program
                 string trimmedEncoding = encoding.Trim().ToLower();
                 if (Array.Exists(AcceptedEncodings, e => e.Equals(trimmedEncoding, StringComparison.OrdinalIgnoreCase)))
                 {
-                    httpResponse.AddHeader("Content-Encoding", trimmedEncoding);
+                    if (!httpResponse.Headers.ContainsKey("Content-Encoding"))
+                    {
+                        httpResponse.AddHeader("Content-Encoding", trimmedEncoding);
+                    }
                     break;
                 }
             }
         }
     }
+
 
 
     void handleStuff(Socket clientTask)
