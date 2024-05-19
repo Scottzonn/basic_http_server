@@ -102,14 +102,15 @@ class Program
                 response.AddHeader("content-type", "text/plain");
 
                 var rs = response.ToString();
+                responseString = response.ToString();
 
                 if (response.Headers.ContainsKey("Content-Encoding") && response.Headers["Content-Encoding"] == "gzip")
                 {
-                    rs = response.ToGzippedString();
+                    Console.WriteLine("Gzipping response");
+                    responseString = response.ToGzippedString();
                 }
 
                 Console.WriteLine("Echo: {0}, {1}", toEcho, rs);
-                responseString = response.ToString();
                 // responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {toEcho.Length}\r\n\r\n{toEcho}";
             }
             if (request.Path == "/")
