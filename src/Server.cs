@@ -145,6 +145,12 @@ class Program
                             stream.Write(data, 0, data.Length);
                         }
                     }
+                    else
+                    {
+                        responseString = "HTTP/1.1 404 Not Found\r\n\r\n";
+                        byte[] data = Encoding.ASCII.GetBytes(responseString);
+                        stream.Write(data, 0, data.Length);
+                    }
                 }
             }
             Console.WriteLine("Sent: {0}", responseString);
