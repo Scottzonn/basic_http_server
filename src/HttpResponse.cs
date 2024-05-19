@@ -11,18 +11,10 @@ class HttpResponse
     public string StatusMessage { get; set; }
     public Dictionary<string, string> Headers { get; set; }
 
-    // Set content length when body is set
     public string Body
     {
         get => _body;
-        set
-        {
-            _body = value;
-            if (Headers != null && !Headers.ContainsKey("Content-Encoding"))
-            {
-                Headers["Content-Length"] = Encoding.UTF8.GetByteCount(value).ToString();
-            }
-        }
+        set => _body = value;
     }
 
     public HttpResponse()
@@ -52,7 +44,14 @@ class HttpResponse
 
     public void AddHeader(string key, string value)
     {
-        Headers[key] = value;
+        if (!Headers.ContainsKey(key))
+        {
+            Headers.Add(key, value);
+        }
+        else
+        {
+            Headers[key] = value;
+        }
     }
 
     private byte[] GetCompressedBody()
@@ -74,12 +73,12 @@ class HttpResponse
         {
             return GetCompressedBodyResponse();
         }
-        return Encoding.UTF8.GetBytes(ToString());
+        return GetUncompressedBodyResponse();
     }
 
     private byte[] GetCompressedBodyResponse()
     {
-        byte[] headerBytes = Encoding.UTF8.GetBytes(GetResponseHeadersWithCompressedBody());
+        byte[] headerBytes = Encoding.UTF8.GetBytes(GetResponseHeaders(true));
         byte[] bodyBytes = GetCompressedBody();
         byte[] responseBytes = new byte[headerBytes.Length + bodyBytes.Length];
         Buffer.BlockCopy(headerBytes, 0, responseBytes, 0, headerBytes.Length);
@@ -87,7 +86,17 @@ class HttpResponse
         return responseBytes;
     }
 
-    private string GetResponseHeadersWithCompressedBody()
+    private byte[] GetUncompressedBodyResponse()
+    {
+        byte[] headerBytes = Encoding.UTF8.GetBytes(GetResponseHeaders(false));
+        byte[] bodyBytes = Encoding.UTF8.GetBytes(_body);
+        byte[] responseBytes = new byte[headerBytes.Length + bodyBytes.Length];
+        Buffer.BlockCopy(headerBytes, 0, responseBytes, 0, headerBytes.Length);
+        Buffer.BlockCopy(bodyBytes, 0, responseBytes, headerBytes.Length, bodyBytes.Length);
+        return responseBytes;
+    }
+
+    private string GetResponseHeaders(bool isCompressed)
     {
         StringBuilder response = new StringBuilder();
         response.Append($"HTTP/1.1 {StatusCode} {StatusMessage}\r\n");
@@ -95,8 +104,16 @@ class HttpResponse
         {
             response.Append($"{header.Key}: {header.Value}\r\n");
         }
-        response.Append($"Content-Length: {GetCompressedBody().Length}\r\n");
-        response.Append("Content-Encoding: gzip\r\n");
+        if (isCompressed)
+        {
+            byte[] compressedBody = GetCompressedBody();
+            response.Append($"Content-Length: {compressedBody.Length}\r\n");
+            response.Append("Content-Encoding: gzip\r\n");
+        }
+        else
+        {
+            response.Append($"Content-Length: {Encoding.UTF8.GetByteCount(_body)}\r\n");
+        }
         response.Append("\r\n");
         return response.ToString();
     }
