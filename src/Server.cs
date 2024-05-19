@@ -90,8 +90,10 @@ class Program
                 var response = new HttpResponse(200, "OK", toEcho);
                 response.AddHeader("content-type", "text/plain");
                 processEncodings(request, response);
+                var rs = response.ToString();
+
+                Console.WriteLine("Echo: {0}, {1}", toEcho, rs);
                 responseString = response.ToString();
-                Console.WriteLine("Echo: {0}, {1]}", toEcho, responseString);
                 // responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {toEcho.Length}\r\n\r\n{toEcho}";
             }
             if (request.Path == "/")

@@ -39,9 +39,10 @@ class HttpResponse
         Body = body;
     }
 
-    public HttpResponse(int statusCode, string statusMessage, string body, Dictionary<string, string> headers) : this(statusCode, statusMessage, body)
+    public HttpResponse(int statusCode, string statusMessage, string body, Dictionary<string, string> headers) : this(statusCode, statusMessage)
     {
         Headers = headers;
+        Body = body;
     }
 
     public void AddHeader(string key, string value)
@@ -50,14 +51,39 @@ class HttpResponse
     }
     public override string ToString()
     {
-        StringBuilder response = new StringBuilder();
-        response.Append($"HTTP/1.1 {StatusCode} {StatusMessage}\r\n");
-        foreach (var header in Headers)
+        try
         {
-            response.Append($"{header.Key}: {header.Value}\r\n");
+            StringBuilder response = new StringBuilder();
+            response.Append($"HTTP/1.1 {StatusCode} {StatusMessage}\r\n");
+
+            foreach (var header in Headers)
+            {
+                if (header.Key == null || header.Value == null)
+                {
+                    throw new FormatException("Header key or value is null.");
+                }
+                response.Append($"{header.Key}: {header.Value}\r\n");
+            }
+
+            response.Append("\r\n");
+            if (Body != null)
+            {
+                response.Append(Body);
+            }
+
+            return response.ToString();
         }
-        response.Append($"\r\n{Body}");
-        return response.ToString();
+        catch (FormatException ex)
+        {
+            Console.WriteLine($"FormatException: {ex.Message}");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Unexpected Exception: {ex.Message}");
+            throw;
+        }
     }
+
 
 }
