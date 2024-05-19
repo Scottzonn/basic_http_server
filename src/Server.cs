@@ -21,7 +21,6 @@ class Program
 
         if (args.Length >= 2)
         {
-            Console.WriteLine("Setting directory: {0}", args[1]);
             if (args[0].ToLower() == "--directory")
             {
                 BaseDir = args[1];
@@ -62,7 +61,6 @@ class Program
         Task.Run(async () =>
         {
             var client = clientTask;
-            Console.WriteLine("Client connected");
             NetworkStream stream = new NetworkStream(client);
             StreamReader reader = new StreamReader(stream, Encoding.UTF8);
             StreamWriter writer = new StreamWriter(stream, Encoding.UTF8);
@@ -70,7 +68,6 @@ class Program
             var request = await HttpRequest.CreateAsync(stream);
             bool routeMatched = false;
 
-            Console.WriteLine("Received: {0} {1} {2}", request.Method, request.Path, request.HttpVersion);
 
             Regex echoRegex = new Regex("^/echo/(.*)");
             Regex userAgentRegex = new Regex("^(/user-agent)$");
@@ -79,10 +76,8 @@ class Program
             if (userAgentPath.Success)
             {
                 routeMatched = true;
-                Console.WriteLine("matches user agent");
                 string? userAgentValue;
                 request.Headers.TryGetValue("user-agent", out userAgentValue);
-                Console.WriteLine("User agent: {0}", userAgentValue);
                 string responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {userAgentValue?.Length}\r\n\r\n{userAgentValue}";
                 byte[] data = Encoding.ASCII.GetBytes(responseString);
                 stream.Write(data, 0, data.Length);
@@ -92,7 +87,6 @@ class Program
             if (match.Success && match.Groups.Count > 1)
             {
                 routeMatched = true;
-                Console.WriteLine("Matches echo");
                 string toEcho = match.Groups[1].Value;
 
                 var response = new HttpResponse(200, "OK", toEcho);
@@ -101,7 +95,6 @@ class Program
 
                 byte[] responseBytes = response.ToByteArray(response.Headers.ContainsKey("Content-Encoding"));
 
-                Console.WriteLine("Echo: {0}, {1}", toEcho, Encoding.UTF8.GetString(responseBytes));
                 stream.Write(responseBytes, 0, responseBytes.Length);
             }
 
@@ -115,7 +108,6 @@ class Program
 
             if (!routeMatched && !string.IsNullOrEmpty(BaseDir))
             {
-                Console.WriteLine("checking basedir");
                 var filesRegex = new Regex("^/files/(.*)");
                 var filesMatch = filesRegex.Match(request.Path);
                 if (filesMatch.Success && filesMatch.Groups.Count > 1)
@@ -125,8 +117,6 @@ class Program
                     string filepath = Path.Combine(BaseDir, fileName);
                     if (request.Method == RequestMethod.POST)
                     {
-                        Console.WriteLine("here2");
-                        Console.WriteLine("file Content: {0}", request.Body);
 
                         string fileContent = request.Body ?? "";
 
@@ -161,13 +151,11 @@ class Program
 
             if (!routeMatched)
             {
-                Console.WriteLine("No route matched, returning 404");
                 string responseString = "HTTP/1.1 404 Not Found\r\n\r\n";
                 byte[] data = Encoding.ASCII.GetBytes(responseString);
                 stream.Write(data, 0, data.Length);
             }
 
-            Console.WriteLine("Closing connection");
             client.Close();
         });
     }
