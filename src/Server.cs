@@ -47,6 +47,7 @@ class Program
                 if (AcceptedEncodings.Contains(encoding.ToLower()))
                 {
                     httpResponse.AddHeader("Content-Encoding", encoding);
+                    Console.WriteLine("Content-Encoding ADDED: {0}", encoding);
                     break;
                 }
             }
