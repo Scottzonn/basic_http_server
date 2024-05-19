@@ -62,7 +62,7 @@ class Program
                                 gzip.Write(bodyBytes, 0, bodyBytes.Length);
                             }
                             byte[] compressedBytes = ms.ToArray();
-                            httpResponse.Body = Convert.ToBase64String(compressedBytes); // Setting as Base64 for transmission
+                            httpResponse.Body = Encoding.UTF8.GetString(compressedBytes); // Setting the body to the raw compressed bytes
                             httpResponse.Headers["Content-Length"] = compressedBytes.Length.ToString();
                         }
                     }
@@ -71,6 +71,7 @@ class Program
             }
         }
     }
+
 
     void handleStuff(Socket clientTask)
     {
@@ -108,7 +109,7 @@ class Program
 
                 var response = new HttpResponse(200, "OK", toEcho);
                 processEncodings(request, response);
-                // response.AddHeader("content-type", "text/plain");
+                response.AddHeader("content-type", "text/plain");
 
                 var rs = response.ToString();
 
