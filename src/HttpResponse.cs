@@ -18,7 +18,7 @@ class HttpResponse
         set
         {
             _body = value;
-            if (Headers != null)
+            if (Headers != null && !Headers.ContainsKey("Content-Encoding"))
             {
                 Headers["Content-Length"] = Encoding.UTF8.GetByteCount(value).ToString();
             }
@@ -66,22 +66,6 @@ class HttpResponse
             }
             return ms.ToArray();
         }
-    }
-
-    public string ToGzippedString()
-    {
-        var compressedBody = GetCompressedBody();
-        StringBuilder response = new StringBuilder();
-        response.Append($"HTTP/1.1 {StatusCode} {StatusMessage}\r\n");
-        foreach (var header in Headers)
-        {
-            response.Append($"{header.Key}: {header.Value}\r\n");
-        }
-        response.Append($"Content-Length: {compressedBody.Length}\r\n");
-        response.Append("Content-Encoding: gzip\r\n");
-        response.Append("\r\n");
-        response.Append(Encoding.UTF8.GetString(compressedBody));
-        return response.ToString();
     }
 
     public override string ToString()

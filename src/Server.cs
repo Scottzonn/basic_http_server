@@ -50,17 +50,11 @@ class Program
                 if (Array.Exists(AcceptedEncodings, e => e.Equals(trimmedEncoding, StringComparison.OrdinalIgnoreCase)))
                 {
                     httpResponse.AddHeader("Content-Encoding", trimmedEncoding);
-
-                    if (trimmedEncoding == "gzip")
-                    {
-                        httpResponse.AddHeader("Content-Encoding", "gzip");
-                    }
                     break;
                 }
             }
         }
     }
-
 
 
     void handleStuff(Socket clientTask)
@@ -99,19 +93,12 @@ class Program
 
                 var response = new HttpResponse(200, "OK", toEcho);
                 processEncodings(request, response);
-                response.AddHeader("content-type", "text/plain");
+                response.AddHeader("Content-Type", "text/plain");
 
-                var rs = response.ToString();
-                responseString = response.ToString();
+                byte[] responseBytes = response.ToByteArray(response.Headers.ContainsKey("Content-Encoding"));
 
-                if (response.Headers.ContainsKey("Content-Encoding") && response.Headers["Content-Encoding"] == "gzip")
-                {
-                    Console.WriteLine("Gzipping response");
-                    responseString = response.ToGzippedString();
-                }
-
-                Console.WriteLine("Echo: {0}, {1}", toEcho, rs);
-                // responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {toEcho.Length}\r\n\r\n{toEcho}";
+                Console.WriteLine("Echo: {0}, {1}", toEcho, Encoding.UTF8.GetString(responseBytes));
+                stream.Write(responseBytes, 0, responseBytes.Length);
             }
             if (request.Path == "/")
             {
