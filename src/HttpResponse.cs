@@ -20,11 +20,11 @@ class HttpResponse
 
     public HttpResponse()
     {
+        Headers = new Dictionary<string, string>();
         Body = string.Empty;
         _body = string.Empty;
         StatusCode = 200;
         StatusMessage = "OK";
-        Headers = new Dictionary<string, string>();
     }
 
     public HttpResponse(int statusCode, string statusMessage) : this()
