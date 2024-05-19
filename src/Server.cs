@@ -59,9 +59,6 @@ class Program
         }
     }
 
-
-
-
     void handleStuff(Socket clientTask)
     {
         Task.Run(async () =>
@@ -110,39 +107,41 @@ class Program
                 byte[] data = Encoding.ASCII.GetBytes(responseString);
                 stream.Write(data, 0, data.Length);
             }
-            else if (!string.IsNullOrEmpty(BaseDir))
+            Console.WriteLine("checking basedir");
+            if (!string.IsNullOrEmpty(BaseDir))
             {
-                Console.WriteLine("checking basedir");
+                Console.WriteLine("basedir not null");
                 var filesRegex = new Regex("^/files/(.*)");
                 var filesMatch = filesRegex.Match(request.Path);
                 if (filesMatch.Success && filesMatch.Groups.Count > 1)
                 {
                     string fileName = filesMatch.Groups[1].Value;
-                    string filepath = Path.Combine(BaseDir, fileName);
+                    string filepath = BaseDir + "/" + fileName;
                     if (request.Method == RequestMethod.POST)
                     {
+
                         Console.WriteLine("here2");
                         Console.WriteLine("file Content: {0}", request.Body);
 
                         string fileContent = request.Body ?? "";
 
-                        using (StreamWriter fwriter = new StreamWriter(filepath))
-                        {
-                            fwriter.Write(fileContent.Replace("\0", string.Empty));
-                        }
+                        StreamWriter fwriter = new StreamWriter(filepath);
+                        fwriter.Write(fileContent.Replace("\0", string.Empty));
                         responseString = $"HTTP/1.1 201 Created\r\n\r\n";
-                        byte[] data = Encoding.ASCII.GetBytes(responseString);
-                        stream.Write(data, 0, data.Length);
+                        fwriter.Close();
+
+
                     }
-                    else if (request.Method == RequestMethod.GET && File.Exists(filepath))
+                    else if (request.Method == RequestMethod.GET)
                     {
-                        using (FileStream fileStream = File.OpenRead(filepath))
-                        using (StreamReader reader2 = new StreamReader(fileStream))
+
+                        if (File.Exists(filepath))
                         {
+                            // Open the file for reading
+                            FileStream fileStream = File.OpenRead(filepath);
+                            StreamReader reader2 = new StreamReader(fileStream);
                             string content = reader2.ReadToEnd();
                             responseString = $"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {content.Length}\r\n\r\n{content}";
-                            byte[] data = Encoding.ASCII.GetBytes(responseString);
-                            stream.Write(data, 0, data.Length);
                         }
                     }
                 }
