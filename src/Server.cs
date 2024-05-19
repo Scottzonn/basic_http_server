@@ -91,7 +91,7 @@ class Program
 
                         StreamWriter fwriter = new StreamWriter(filepath);
                         fwriter.Write(fileContent.Replace("\0", string.Empty));
-                        responseString = $"HTTP/1.1 201 OK\r\n\r\n";
+                        responseString = $"HTTP/1.1 201 Created\r\n\r\n";
                         fwriter.Close();
 
 
