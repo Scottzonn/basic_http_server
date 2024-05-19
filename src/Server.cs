@@ -108,12 +108,9 @@ class Program
 
                 var response = new HttpResponse(200, "OK", toEcho);
                 processEncodings(request, response);
-                response.AddHeader("content-type", "text/plain");
-
-
+                // response.AddHeader("content-type", "text/plain");
 
                 var rs = response.ToString();
-
 
                 Console.WriteLine("Echo: {0}, {1}", toEcho, rs);
                 responseString = response.ToString();
