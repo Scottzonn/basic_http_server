@@ -1,23 +1,22 @@
+using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection.Metadata;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
-using System.IO.Compression;
-
+using System.Threading.Tasks;
 
 class Program
 {
     static string? BaseDir;
-
     static string[] AcceptedEncodings = { "gzip" };
+
     static async Task Main(string[] args)
     {
         TcpListener server = new TcpListener(IPAddress.Any, 4221);
         Console.WriteLine("Starting server...");
         server.Start();
-        Console.WriteLine("Server started on port 4421");
+        Console.WriteLine("Server started on port 4221");
         Program pg = new Program();
 
         if (args.Length >= 2)
@@ -35,7 +34,6 @@ class Program
             pg.handleStuff(client);
         }
     }
-
 
     public void processEncodings(HttpRequest request, HttpResponse httpResponse)
     {
@@ -59,9 +57,6 @@ class Program
         }
     }
 
-
-
-
     void handleStuff(Socket clientTask)
     {
         Task.Run(async () =>
@@ -73,28 +68,30 @@ class Program
             StreamWriter writer = new StreamWriter(stream, Encoding.UTF8);
 
             var request = await HttpRequest.CreateAsync(stream);
+            bool routeMatched = false;
 
             Console.WriteLine("Received: {0} {1} {2}", request.Method, request.Path, request.HttpVersion);
 
             Regex echoRegex = new Regex("^/echo/(.*)");
             Regex userAgentRegex = new Regex("^(/user-agent)$");
 
-            string responseString = "HTTP/1.1 404 Not Found\r\n\r\n";
             var userAgentPath = userAgentRegex.Match(request.Path);
             if (userAgentPath.Success)
             {
+                routeMatched = true;
                 Console.WriteLine("matches user agent");
                 string? userAgentValue;
                 request.Headers.TryGetValue("user-agent", out userAgentValue);
                 Console.WriteLine("User agent: {0}", userAgentValue);
-                responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {userAgentValue?.Length}\r\n\r\n{userAgentValue}";
+                string responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {userAgentValue?.Length}\r\n\r\n{userAgentValue}";
                 byte[] data = Encoding.ASCII.GetBytes(responseString);
                 stream.Write(data, 0, data.Length);
-
             }
+
             var match = echoRegex.Match(request.Path);
             if (match.Success && match.Groups.Count > 1)
             {
+                routeMatched = true;
                 Console.WriteLine("Matches echo");
                 string toEcho = match.Groups[1].Value;
 
@@ -107,19 +104,23 @@ class Program
                 Console.WriteLine("Echo: {0}, {1}", toEcho, Encoding.UTF8.GetString(responseBytes));
                 stream.Write(responseBytes, 0, responseBytes.Length);
             }
-            else if (request.Path == "/")
+
+            if (request.Path == "/")
             {
-                responseString = "HTTP/1.1 200 OK\r\n\r\n";
+                routeMatched = true;
+                string responseString = "HTTP/1.1 200 OK\r\n\r\n";
                 byte[] data = Encoding.ASCII.GetBytes(responseString);
                 stream.Write(data, 0, data.Length);
             }
-            else if (!string.IsNullOrEmpty(BaseDir))
+
+            if (!routeMatched && !string.IsNullOrEmpty(BaseDir))
             {
                 Console.WriteLine("checking basedir");
                 var filesRegex = new Regex("^/files/(.*)");
                 var filesMatch = filesRegex.Match(request.Path);
                 if (filesMatch.Success && filesMatch.Groups.Count > 1)
                 {
+                    routeMatched = true;
                     string fileName = filesMatch.Groups[1].Value;
                     string filepath = Path.Combine(BaseDir, fileName);
                     if (request.Method == RequestMethod.POST)
@@ -133,7 +134,7 @@ class Program
                         {
                             fwriter.Write(fileContent.Replace("\0", string.Empty));
                         }
-                        responseString = $"HTTP/1.1 201 Created\r\n\r\n";
+                        string responseString = $"HTTP/1.1 201 Created\r\n\r\n";
                         byte[] data = Encoding.ASCII.GetBytes(responseString);
                         stream.Write(data, 0, data.Length);
                     }
@@ -143,24 +144,24 @@ class Program
                         using (StreamReader reader2 = new StreamReader(fileStream))
                         {
                             string content = reader2.ReadToEnd();
-                            responseString = $"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {content.Length}\r\n\r\n{content}";
+                            string responseString = $"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {content.Length}\r\n\r\n{content}";
                             byte[] data = Encoding.ASCII.GetBytes(responseString);
                             stream.Write(data, 0, data.Length);
                         }
                     }
-                    else
-                    {
-                        responseString = "HTTP/1.1 404 Not Found\r\n\r\n";
-                        byte[] data = Encoding.ASCII.GetBytes(responseString);
-                        stream.Write(data, 0, data.Length);
-                    }
                 }
             }
-            Console.WriteLine("Sent: {0}", responseString);
 
-            // Close the connection to the client.
+            if (!routeMatched)
+            {
+                Console.WriteLine("No route matched, returning 404");
+                string responseString = "HTTP/1.1 404 Not Found\r\n\r\n";
+                byte[] data = Encoding.ASCII.GetBytes(responseString);
+                stream.Write(data, 0, data.Length);
+            }
+
+            Console.WriteLine("Closing connection");
             client.Close();
         });
     }
-
 }
