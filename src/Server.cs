@@ -103,6 +103,11 @@ class Program
 
                 var rs = response.ToString();
 
+                if (response.Headers.ContainsKey("Content-Encoding") && response.Headers["Content-Encoding"] == "gzip")
+                {
+                    rs = response.ToGzippedString();
+                }
+
                 Console.WriteLine("Echo: {0}, {1}", toEcho, rs);
                 responseString = response.ToString();
                 // responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {toEcho.Length}\r\n\r\n{toEcho}";
