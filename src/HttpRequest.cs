@@ -62,7 +62,7 @@ class HttpRequest
             string[] header = currHeader.Split(":", 2, StringSplitOptions.TrimEntries);
             if (header.Length == 2)
             {
-                Headers.Add(header[0].Trim(), header[1].Trim());
+                Headers.Add(header[0].Trim().ToLower(), header[1].Trim());
             }
         }
 
