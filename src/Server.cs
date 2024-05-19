@@ -88,6 +88,9 @@ class Program
                 request.Headers.TryGetValue("user-agent", out userAgentValue);
                 Console.WriteLine("User agent: {0}", userAgentValue);
                 responseString = $"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {userAgentValue?.Length}\r\n\r\n{userAgentValue}";
+                byte[] data = Encoding.ASCII.GetBytes(responseString);
+                stream.Write(data, 0, data.Length);
+
             }
             var match = echoRegex.Match(request.Path);
             if (match.Success && match.Groups.Count > 1)
