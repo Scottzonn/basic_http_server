@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Text;
 
 class HttpResponse
@@ -7,21 +11,23 @@ class HttpResponse
     public string StatusMessage { get; set; }
     public Dictionary<string, string> Headers { get; set; }
 
-    //set content length when body is set
+    // Set content length when body is set
     public string Body
     {
         get => _body;
         set
         {
             _body = value;
-            Headers["Content-Length"] = Encoding.UTF8.GetByteCount(value).ToString();
+            if (Headers != null)
+            {
+                Headers["Content-Length"] = Encoding.UTF8.GetByteCount(value).ToString();
+            }
         }
     }
 
     public HttpResponse()
     {
         Headers = new Dictionary<string, string>();
-        Body = string.Empty;
         _body = string.Empty;
         StatusCode = 200;
         StatusMessage = "OK";
@@ -33,7 +39,6 @@ class HttpResponse
         StatusMessage = statusMessage;
     }
 
-
     public HttpResponse(int statusCode, string statusMessage, string body) : this(statusCode, statusMessage)
     {
         Body = body;
@@ -42,48 +47,85 @@ class HttpResponse
     public HttpResponse(int statusCode, string statusMessage, string body, Dictionary<string, string> headers) : this(statusCode, statusMessage)
     {
         Headers = headers;
-        Body = body;
+        Body = body; // Set Body after Headers to avoid null reference
     }
 
     public void AddHeader(string key, string value)
     {
         Headers[key] = value;
     }
-    public override string ToString()
+
+    private byte[] GetCompressedBody()
     {
-        try
+        byte[] bodyBytes = Encoding.UTF8.GetBytes(_body);
+        using (MemoryStream ms = new MemoryStream())
         {
-            StringBuilder response = new StringBuilder();
-            response.Append($"HTTP/1.1 {StatusCode} {StatusMessage}\r\n");
-
-            foreach (var header in Headers)
+            using (GZipStream gzip = new GZipStream(ms, CompressionMode.Compress))
             {
-                if (header.Key == null || header.Value == null)
-                {
-                    throw new FormatException("Header key or value is null.");
-                }
-                response.Append($"{header.Key}: {header.Value}\r\n");
+                gzip.Write(bodyBytes, 0, bodyBytes.Length);
             }
-
-            response.Append("\r\n");
-            if (Body != null)
-            {
-                response.Append(Body);
-            }
-
-            return response.ToString();
-        }
-        catch (FormatException ex)
-        {
-            Console.WriteLine($"FormatException: {ex.Message}");
-            throw;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Unexpected Exception: {ex.Message}");
-            throw;
+            return ms.ToArray();
         }
     }
 
+    public string ToGzippedString()
+    {
+        var compressedBody = GetCompressedBody();
+        StringBuilder response = new StringBuilder();
+        response.Append($"HTTP/1.1 {StatusCode} {StatusMessage}\r\n");
+        foreach (var header in Headers)
+        {
+            response.Append($"{header.Key}: {header.Value}\r\n");
+        }
+        response.Append($"Content-Length: {compressedBody.Length}\r\n");
+        response.Append("Content-Encoding: gzip\r\n");
+        response.Append("\r\n");
+        response.Append(Encoding.UTF8.GetString(compressedBody));
+        return response.ToString();
+    }
 
+    public override string ToString()
+    {
+        StringBuilder response = new StringBuilder();
+        response.Append($"HTTP/1.1 {StatusCode} {StatusMessage}\r\n");
+        foreach (var header in Headers)
+        {
+            response.Append($"{header.Key}: {header.Value}\r\n");
+        }
+        response.Append("\r\n");
+        response.Append(_body);
+        return response.ToString();
+    }
+
+    public byte[] ToByteArray(bool gzip = false)
+    {
+        if (gzip)
+        {
+            return GetCompressedBodyResponse();
+        }
+        return Encoding.UTF8.GetBytes(ToString());
+    }
+
+    private byte[] GetCompressedBodyResponse()
+    {
+        byte[] headerBytes = Encoding.UTF8.GetBytes(GetResponseHeadersWithCompressedBody());
+        byte[] bodyBytes = GetCompressedBody();
+        byte[] responseBytes = new byte[headerBytes.Length + bodyBytes.Length];
+        Buffer.BlockCopy(headerBytes, 0, responseBytes, 0, headerBytes.Length);
+        Buffer.BlockCopy(bodyBytes, 0, responseBytes, headerBytes.Length, bodyBytes.Length);
+        return responseBytes;
+    }
+
+    private string GetResponseHeadersWithCompressedBody()
+    {
+        StringBuilder response = new StringBuilder();
+        response.Append($"HTTP/1.1 {StatusCode} {StatusMessage}\r\n");
+        foreach (var header in Headers)
+        {
+            response.Append($"{header.Key}: {header.Value}\r\n");
+        }
+        response.Append("Content-Encoding: gzip\r\n");
+        response.Append("\r\n");
+        return response.ToString();
+    }
 }

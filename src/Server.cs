@@ -53,24 +53,14 @@ class Program
 
                     if (trimmedEncoding == "gzip")
                     {
-                        string body = httpResponse.Body;
-                        byte[] bodyBytes = Encoding.UTF8.GetBytes(body);
-                        using (MemoryStream ms = new MemoryStream())
-                        {
-                            using (GZipStream gzip = new GZipStream(ms, CompressionMode.Compress))
-                            {
-                                gzip.Write(bodyBytes, 0, bodyBytes.Length);
-                            }
-                            byte[] compressedBytes = ms.ToArray();
-                            httpResponse.Body = Encoding.UTF8.GetString(compressedBytes); // Setting the body to the raw compressed bytes
-                            httpResponse.Headers["Content-Length"] = compressedBytes.Length.ToString();
-                        }
+                        httpResponse.AddHeader("Content-Encoding", "gzip");
                     }
                     break;
                 }
             }
         }
     }
+
 
 
     void handleStuff(Socket clientTask)
