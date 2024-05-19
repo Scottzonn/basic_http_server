@@ -12,7 +12,6 @@ class Program
     static string[] AcceptedEncodings = ["gzip"];
     static async Task Main(string[] args)
     {
-        // Uncomment this block to pass the first stage
         TcpListener server = new TcpListener(IPAddress.Any, 4221);
         Console.WriteLine("Starting server...");
         server.Start();
@@ -44,10 +43,11 @@ class Program
             string[] encodings = acceptEncoding.Split(",");
             foreach (string encoding in encodings)
             {
-                if (AcceptedEncodings.Contains(encoding.ToLower()))
+                string trimmedEncoding = encoding.Trim().ToLower();
+                if (Array.Exists(AcceptedEncodings, e => e.Equals(trimmedEncoding, StringComparison.OrdinalIgnoreCase)))
                 {
-                    httpResponse.AddHeader("Content-Encoding", encoding);
-                    Console.WriteLine("Content-Encoding ADDED: {0}", encoding);
+                    httpResponse.AddHeader("Content-Encoding", trimmedEncoding);
+                    Console.WriteLine("Content-Encoding ADDED: {0}", trimmedEncoding);
                     break;
                 }
             }
