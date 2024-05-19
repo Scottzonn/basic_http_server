@@ -44,8 +44,9 @@ class Program
             StreamReader reader = new StreamReader(stream, Encoding.UTF8);
             StreamWriter writer = new StreamWriter(stream, Encoding.UTF8);
 
-            var request = new HttpRequest();
-            await request.ParseRequest(stream);
+            var request = await HttpRequest.CreateAsync(stream);
+
+            Console.WriteLine("Received: {0} {1} {2}", request.Method, request.Path, request.HttpVersion);
 
             Regex echoRegex = new Regex("^/echo/(.*)");
             Regex userAgentRegex = new Regex("^(/user-agent)$");
